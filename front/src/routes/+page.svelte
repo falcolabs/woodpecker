@@ -57,7 +57,7 @@
 
 <div id="container" class="dark-mode" bind:this={container}>
     <div class="topbar">
-        <p>Kịch Anh 1 2024 - Hậu kỳ</p>
+        <p>Soundboard</p>
         <button class="ldbutton" on:click={toggleMode}
             >{DARK_MODE ? "Dark Mode" : "Light Mode"}</button
         >
