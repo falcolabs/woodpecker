@@ -1,0 +1,4 @@
+python-socketio
+aiohttp
+pygame
+aiohttp_cors
