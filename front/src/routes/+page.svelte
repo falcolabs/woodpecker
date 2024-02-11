@@ -1,13 +1,20 @@
-<script>
+<script lang="ts">
     import { io } from "socket.io-client";
-    import { onMount } from "svelte";
+    import { onMount, type ComponentType } from "svelte";
 
-    const SERVER_ADDRESS = "FILL_YOUR_IP_HERE";
-    let AUDIO_LIST = null;
-    let PLAYING = null;
+    // Type Gymnastics
+    interface Track {
+        status: "playing" | "ended" | "looping" | "paused";
+        audio: string;
+    }
+
+    const SERVER_ADDRESS = "http://FILL_YOUR_IP_HERE:6942";
+    let AUDIO_LIST: string[] | null = null;
+    let PLAYING: Track[] | null = null;
     let CONNECTED = true;
     let DARK_MODE = false;
-    let container = null;
+    let container: HTMLDivElement | null = null;
+    let volumeSlider: HTMLInputElement | null = null;
     onMount(() =>
         setInterval(async () => {
             fetch(SERVER_ADDRESS + "/update", {
@@ -21,7 +28,7 @@
                         CONNECTED = true;
                     });
                 })
-                .catch((shit) => {
+                .catch((_) => {
                     CONNECTED = false;
                 });
         }, 200)
@@ -29,19 +36,32 @@
     const socket = io(SERVER_ADDRESS, {
         transports: ["websocket"]
     });
-    const requestAudioFunction = (audioName) => () => {
+    const requestAudioFunction = (audioName: string) => () => {
         socket.emit("play_audio", audioName);
-        PLAYING?.push(audioName);
+        PLAYING?.push({
+            status: "playing",
+            audio: audioName
+        });
     };
 
-    const audioOperation = (opName, trackIndex) => () => {
+    const audioOperation = (opName: string, trackIndex: number) => () => {
         socket.emit("audio_operation", {
             operation: opName,
-            affected: trackIndex
+            value: trackIndex
         });
     };
     const toggleMode = () => {
         DARK_MODE = !DARK_MODE;
+    };
+
+    const volumeChange = () => {
+        let sliderValue = volumeSlider?.value;
+        if (sliderValue) {
+            socket.emit("audio_operation", {
+                operation: "volume",
+                value: Number.parseFloat(sliderValue)
+            });
+        }
     };
 
     $: {
@@ -58,9 +78,7 @@
 <div id="container" class="dark-mode" bind:this={container}>
     <div class="topbar">
         <p>Soundboard</p>
-        <button class="ldbutton" on:click={toggleMode}
-            >{DARK_MODE ? "Dark Mode" : "Light Mode"}</button
-        >
+        <button class="ldbutton" on:click={toggleMode}>{DARK_MODE ? "Light" : "Dark"}</button>
     </div>
     <div class="lower">
         <div class="pad">
@@ -100,8 +118,12 @@
                             <button class="smallbtn" on:click={audioOperation("stop", i)}
                                 >Stop</button
                             >
-                            <button class="smallbtn" on:click={audioOperation("loop", i)}
-                                >Loop</button
+                            <button class="smallbtn" on:click={audioOperation("togloop", i)}
+                                >{#if track.status == "looping"}
+                                    Unloop
+                                {:else}
+                                    Loop
+                                {/if}</button
                             >
                         </div>
                     </div>
@@ -110,6 +132,19 @@
                 <p class="noresponse">Không có tệp âm thanh nào đang phát.</p>
             {/if}
         </div>
+    </div>
+    <div class="slidecon">
+        <input
+            type="range"
+            min="0"
+            max="1"
+            value="0"
+            step="0.001"
+            class="slider"
+            id="volume"
+            on:input={volumeChange}
+            bind:this={volumeSlider}
+        />
     </div>
 </div>
 
@@ -129,7 +164,7 @@
 
     .dark-mode {
         --background-color: #1c1f26;
-        --accent: #d833af;
+        --accent: #ad288c;
         --text-color: #ffffff;
         --text-color-2: #ffffff;
         --text-color-3: #b48ead;
@@ -244,5 +279,47 @@
         padding: 0.5em;
         width: max-content;
         cursor: pointer;
+    }
+
+    .slidecon {
+        width: 100%;
+        height: 7vh;
+        margin: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        justify-items: center;
+        margin-top: -0.5em;
+    }
+
+    .slider {
+        width: 95%;
+        height: 2em;
+        -webkit-appearance: none;
+        appearance: none;
+        outline: none;
+        opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+        background: var(--fade-color);
+        -webkit-transition: 0.2s; /* 0.2 seconds transition on hover */
+        transition: ease-in 0.2s;
+        border-radius: 13px;
+    }
+
+    .slider::-webkit-slider-thumb {
+        -webkit-appearance: none; /* Override default look */
+        appearance: none;
+        width: 30px; /* Set a specific slider handle width */
+        height: 30px; /* Slider handle height */
+        background: var(--accent); /* Green background */
+        cursor: pointer; /* Cursor on hover */
+        border-radius: 30px;
+    }
+
+    .slider::-moz-range-thumb {
+        width: 30px; /* Set a specific slider handle width */
+        height: 30px; /* Slider handle height */
+        background: var(--accent); /* Green background */
+        cursor: pointer; /* Cursor on hover */
+        border-radius: 30px;
     }
 </style>
