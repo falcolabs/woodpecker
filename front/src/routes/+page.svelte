@@ -7,12 +7,11 @@
         status: "playing" | "ended" | "looping" | "paused";
         audio: string;
     }
-
-    const SERVER_ADDRESS = "http://FILL_YOUR_IP_HERE:6942";
+    const SERVER_ADDRESS = `http://${import.meta.env.IPADDR}:6942`;
     let AUDIO_LIST: string[] | null = null;
     let PLAYING: Track[] | null = null;
     let CONNECTED = true;
-    let DARK_MODE = false;
+    let DARK_MODE = true;
     let container: HTMLDivElement | null = null;
     let volumeSlider: HTMLInputElement | null = null;
     onMount(() =>
@@ -96,37 +95,38 @@
         </div>
         <div class="playing">
             <p class="label">CURRENTLY PLAYING</p>
+            <p class="sublabel">Click on entries to fade.</p>
             {#if !CONNECTED}
                 <p class="noresponse">Đang kết nối...</p>
             {:else if PLAYING === null}
                 <p class="noresponse">Hiện không phát âm thanh nào</p>
             {:else if PLAYING.length > 0}
                 {#each PLAYING.entries() as [i, track]}
-                    <div class="playing-entry">
+                    <button class="playing-entry" on:click={audioOperation("fade", i)}>
                         <p>{track.audio.substring(0, track.audio.length - 4)}</p>
                         <div>
                             <button class="smallbtn" on:click={audioOperation("pause", i)}>
                                 {#if track.status == "paused"}
-                                    Unpause
+                                    Resume
                                 {:else}
                                     Pause
                                 {/if}
                             </button>
-                            <button class="smallbtn" on:click={audioOperation("fade", i)}
+                            <!-- <button class="smallbtn" on:click={audioOperation("fade", i)}
                                 >Fade</button
-                            >
+                            > -->
                             <button class="smallbtn" on:click={audioOperation("stop", i)}
                                 >Stop</button
                             >
-                            <button class="smallbtn" on:click={audioOperation("togloop", i)}
+                            <!-- <button class="smallbtn" on:click={audioOperation("togloop", i)}
                                 >{#if track.status == "looping"}
                                     Unloop
                                 {:else}
                                     Loop
                                 {/if}</button
-                            >
+                            > -->
                         </div>
-                    </div>
+                    </button>
                 {/each}
             {:else}
                 <p class="noresponse">Không có tệp âm thanh nào đang phát.</p>
@@ -138,7 +138,7 @@
             type="range"
             min="0"
             max="1"
-            value="0"
+            value="1"
             step="0.001"
             class="slider"
             id="volume"
@@ -242,15 +242,24 @@
     .playing {
         width: 30%;
         margin-right: 2em;
+        height: 80vh;
+        overflow: scroll;
     }
 
     .playing-entry {
         display: flex;
         flex-direction: row;
+        border: none;
+        background: none;
+        width: 100%;
         border-bottom: dashed 1px var(--fade-color);
         padding: 1em;
         align-items: center;
         justify-content: space-between;
+        font-family: var(--font);
+        font-size: 1em;
+        color: var(--text-color);
+        cursor: pointer;
     }
 
     .smallbtn {
@@ -321,5 +330,12 @@
         background: var(--accent); /* Green background */
         cursor: pointer; /* Cursor on hover */
         border-radius: 30px;
+    }
+    .sublabel {
+        text-align: center;
+        width: 100%;
+        font-style: italic;
+        margin-top: -1.5em;
+        color: var(--text-color-3);
     }
 </style>

@@ -1,7 +1,9 @@
+from ipaddress import ip_address
 import os
 import json
 import pygame
-import asyncio
+import sys
+import subprocess
 import socketio  # type: ignore
 import aiohttp_cors  # type: ignore
 
@@ -70,7 +72,10 @@ async def update(_):
         if t["status"] == "ended":
             remove_list.append(i)
     for i in remove_list:
-        TRACKS.pop(i)
+        try:
+            TRACKS.pop(i)
+        except IndexError:
+            pass
 
     serializable: list[dict[str, str]] = []
     for i in TRACKS:
@@ -106,22 +111,28 @@ async def audio_operation(sid: int, data: UpdateRequest):
         case "fade":
             TRACKS[data["value"]]["channel"].fadeout(2000)  # type: ignore
             TRACKS[data["value"]]["status"] = "ended"
-        case "togloop":
-            if TRACKS[data["value"]]["status"] == "looping":
-                asyncio.get_event_loop().call_later(
-                    SOUND_LIST[TRACKS[data["value"]]["audio"]].get_length() - 1,  # type: ignore
-                    lambda: TRACKS[data["value"]]["channel"].play(  # type: ignore
-                        SOUND_LIST[TRACKS[data["value"]]["audio"]], loops=1  # type: ignore
-                    ),
-                )
-            else:
-                asyncio.get_event_loop().call_later(
-                    SOUND_LIST[TRACKS[data["value"]]["audio"]].get_length() - 1,  # type: ignore
-                    lambda: TRACKS[data["value"]]["channel"].play(  # type: ignore
-                        SOUND_LIST[TRACKS[data["value"]]["audio"]], loops=-1  # type: ignore
-                    ),
-                )
-                TRACKS[data["value"]]["status"] = "looping"
+        # case "togloop":
+        #     if TRACKS[data["value"]]["status"] == "looping":
+        #         try:
+        #             asyncio.get_event_loop().call_later(
+        #                 SOUND_LIST[TRACKS[data["value"]]["audio"]].get_length() - 1,  # type: ignore
+        #                 lambda: TRACKS[data["value"]]["channel"].play(  # type: ignore
+        #                     SOUND_LIST[TRACKS[data["value"]]["audio"]], loops=1  # type: ignore
+        #                 ),
+        #             )
+        #         except:
+        #             pass
+        #     else:
+        #         try:
+        #             asyncio.get_event_loop().call_later(
+        #                 SOUND_LIST[TRACKS[data["value"]]["audio"]].get_length() - 1,  # type: ignore
+        #                 lambda: TRACKS[data["value"]]["channel"].play(  # type: ignore
+        #                     SOUND_LIST[TRACKS[data["value"]]["audio"]], loops=-1  # type: ignore
+        #                 ),
+        #             )
+        #             TRACKS[data["value"]]["status"] = "looping"
+        #         except:
+        #             pass
         case "volume":
             global volume
             volume = float(data["value"])
@@ -131,11 +142,14 @@ async def audio_operation(sid: int, data: UpdateRequest):
 
 @sio.event  # type: ignore
 async def play_audio(sid: int, data: str):
-    if data.lower() in SOUND_LIST.keys():
-        channel = pygame.mixer.find_channel()
-        TRACKS.append({"audio": data, "status": "playing", "channel": channel})
-        channel.set_volume(1)
-        channel.play(SOUND_LIST[data])
+    try:
+        if data in SOUND_LIST.keys():
+            channel = pygame.mixer.find_channel(True)
+            TRACKS.append({"audio": data, "status": "playing", "channel": channel})
+            channel.set_volume(1)
+            channel.play(SOUND_LIST[data])
+    except:
+        pass
 
 
 @sio.event  # type: ignore
@@ -150,4 +164,8 @@ route = cors.add(  # type: ignore
 
 
 if __name__ == "__main__":
-    web.run_app(init(), host="FILL_YOUR_IP_HERE", port=6942)  # type: ignore
+    ip_addr = sys.argv[1]
+    with open("front/.env", "w") as f:
+        f.write(f'VITE_IPADDR="{ip_addr}"')
+    subprocess.Popen(["npx.cmd", "vite", "dev", "--host", ip_addr], cwd="front", )  # type: ignore
+    web.run_app(init(), host=ip_addr, port=6942)  # type: ignore
