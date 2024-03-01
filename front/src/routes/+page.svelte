@@ -7,7 +7,7 @@
         status: "playing" | "ended" | "looping" | "paused";
         audio: string;
     }
-    const SERVER_ADDRESS = `http://${import.meta.env.IPADDR}:6942`;
+    const SERVER_ADDRESS = `http://${import.meta.env.VITE_IPADDR}:6942`;
     let AUDIO_LIST: string[] | null = null;
     let PLAYING: Track[] | null = null;
     let CONNECTED = true;
