@@ -102,9 +102,11 @@
                 <p class="noresponse">Hiện không phát âm thanh nào</p>
             {:else if PLAYING.length > 0}
                 {#each PLAYING.entries() as [i, track]}
-                    <button class="playing-entry" on:click={audioOperation("fade", i)}>
-                        <p>{track.audio.substring(0, track.audio.length - 4)}</p>
-                        <div>
+                    <div class="playing-entry">
+                        <button on:click={audioOperation("fade", i)} class="invisbutton">
+                            {track.audio.substring(0, track.audio.length - 4)}
+                        </button>
+                        <div class="controls">
                             <button class="smallbtn" on:click={audioOperation("pause", i)}>
                                 {#if track.status == "paused"}
                                     Resume
@@ -126,7 +128,7 @@
                                 {/if}</button
                             > -->
                         </div>
-                    </button>
+                    </div>
                 {/each}
             {:else}
                 <p class="noresponse">Không có tệp âm thanh nào đang phát.</p>
@@ -240,7 +242,7 @@
     }
 
     .playing {
-        width: 30%;
+        min-width: 30vw;
         margin-right: 2em;
         height: 80vh;
         overflow: scroll;
@@ -251,7 +253,7 @@
         flex-direction: row;
         border: none;
         background: none;
-        width: 100%;
+        width: 90%;
         border-bottom: dashed 1px var(--fade-color);
         padding: 1em;
         align-items: center;
@@ -272,6 +274,7 @@
         font-weight: bold;
         transition: ease-in-out 200ms;
         color: var(--accent-text);
+        z-index: 1;
     }
 
     .smallbtn:hover {
@@ -337,5 +340,19 @@
         font-style: italic;
         margin-top: -1.5em;
         color: var(--text-color-3);
+    }
+    .invisbutton {
+        padding: 1.5em;
+        padding-right: 20em;
+        margin: -1.5em;
+        margin-right: -20em;
+        background: none;
+        border: none;
+        color: var(--text-color);
+        font-family: var(--font);
+        font-size: 1em;
+    }
+    .controls {
+        margin-left: -4em;
     }
 </style>
